@@ -98,9 +98,9 @@ class Observer {
     this.unDepend()
   }
 
-  publish(that) {
+  publish(...args) {
     _.forEach([...this.watcherMap.values()], func => {
-      func.call(that, this._props, this._state, that)
+      func.call(...args)
     })
   }
 
@@ -114,14 +114,14 @@ class Observer {
   }
 
   collectPropsNotifies(props) {
-    _.forEach(props, (item, key) => {
-      this._props[key] = item
+    _.forEach(props, (value, key) => {
+      this._props[key] = value
     })
   }
 
   collectStateNotifies(state) {
-    _.forEach(state, (item, key) => {
-      this._state[key] = item
+    _.forEach(state, (value, key) => {
+      this._state[key] = value
     })
   }
 }

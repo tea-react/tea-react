@@ -5,7 +5,7 @@ import Observer from './Observer.js'
 
 const originSetState = React.Component.prototype.setState
 
-class ObservableComponent extends React.Component {
+class ObComponent extends React.Component {
 
   _stateHasChanged = false
 
@@ -20,8 +20,6 @@ class ObservableComponent extends React.Component {
     this._$observer = new Observer({
       isEqual: this.isEqual
     })
-    this._$props = {}
-    this._$state = {}
   }
 
   _subscribe(props, state, func) {
@@ -51,13 +49,17 @@ class ObservableComponent extends React.Component {
     originSetState.apply(this, args)
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
+    if (_.isFunction(this._shouldComponentUpdate) &&
+      this._shouldComponentUpdate(nextProps, nextState, nextContext) === false) {
+      return false
+    }
     let rst = true
     this._$observer.clearNotifies()
     if (this._stateHasChanged) {
       this._stateHasChanged = false
       rst = !this.isEqual(nextState, this.state)
-      this._$observer.collectStateNotify(nextState)
+      this._$observer.collectStateNotifies(nextState)
     } else {
       const propsHasChanged = !this.isEqual(nextProps, this.props)
       rst = propsHasChanged
@@ -70,10 +72,22 @@ class ObservableComponent extends React.Component {
       this._$observer.collectPropsNotifies(nextProps)
     }
     if (rst) {
-      this._$observer.publish(this)
+      // NOTE:
+      // shouldComponentUpdate执行后才会赋值props,state,context等
+      // 但publish执行时shouldComponentUpdate并没有执行完
+      // 为了数据一致性，需要手动赋值
+      // 参考源码 react/packages/react-test-renderer/src/ReactShallowRenderer.js :302
+      //
+      const prevProps = this.props  // react内部保证了props每次都是新的对象
+      const prevState = { ...this.state } // react内部对state并没有使用新对象
+      const prevContext = { ...this.context }
+      this.props = nextProps
+      this.state = nextState
+      this.context = nextContext
+      this._$observer.publish(this, prevProps, prevState, prevContext)
     }
     return rst
   }
 }
 
-export default ObservableComponent
+export default ObComponent

@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import classNames from 'classnames';
-import ObComponent from 'utils/ObComponent.js'
+import ObservableComponent from 'utils/ObservableComponent.js'
 import _ from 'lodash'
 
-export default class Input extends ObComponent {
+export default class Input extends ObservableComponent {
   static defaultProps = {
     prefixCls: 'tn-input',
     type: 'text',
@@ -52,20 +52,19 @@ export default class Input extends ObComponent {
     if (this.state.value === null || this.state.value === undefined) {
       this.state.value = ''
     }
-    console.log('input constructor', {...this.props}, {...this.state})
+    console.log('input constructor', this.props, this.state)
     this._subscribe([
       'className',
       'style',
-    ], [], (preProps, preStates) => {
-      console.log('trigger1', preProps, preStates)
+    ], [], (props, states) => {
+      console.log('trigger1', props, states)
     })
     this._subscribe([
       'className',
       'style',
       'value'
-    ], [], (preProps, states, preContext) => {
-      console.log('trigger2', this.props, preProps, this.props === preProps,
-        this.state === states, this.context === preContext)
+    ], [], (props, states) => {
+      console.log('trigger2', props, states)
     })
   }
 
@@ -209,8 +208,6 @@ export default class Input extends ObComponent {
     // this._notify()
     console.log('input render', this.props)
     const {style, className, value} = this.props
-    return ''
-      /*
     const inputProps = _.omit(this.props, [
       'value',
       'defaultValue',
@@ -374,6 +371,5 @@ export default class Input extends ObComponent {
       }
     }
     return node
-      */
   }
 }
