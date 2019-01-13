@@ -3,14 +3,37 @@ import _ from 'lodash'
 import shallowEqual from './shallowEqual'
 import Observer from './Observer.js'
 
+function transformKeys(target) {
+  const rst = {
+    props: [],
+    state: [],
+    rest: [],
+  }
+  _.forEach(target, item => {
+    if (_.isString(item)) {
+      const attrs = item.split('.')
+      if (attrs[1]) {
+        if (attrs[0] === 'props') {
+          rst.props.push(attrs[1])
+        } else if (attrs[0] === 'state') {
+          rst.state.push(attrs[1])
+        }
+      } else {
+        rst.rest.push(item)
+      }
+    }
+  })
+  return rst
+}
+
 const originSetState = React.Component.prototype.setState
 
 class ObComponent extends React.Component {
 
   _stateHasChanged = false
 
-  constructor(props, conf) {
-    super(props)
+  constructor(props, context, updater, conf) {
+    super(props, context, updater)
     this.isEqual = shallowEqual
     if (conf) {
       if (_.isFunction(conf.customEqual)) {
@@ -20,28 +43,6 @@ class ObComponent extends React.Component {
     this._$observer = new Observer({
       isEqual: this.isEqual
     })
-  }
-
-  _subscribe(props, state, func) {
-    if (arguments.length === 2) {
-      func = state
-      state = []
-    }
-    this._$observer.subscribe(this.props, this.state, props, state, func)
-  }
-
-  _subscribeProps(props, func) {
-    if (_.isString(props)) {
-      props = [props]
-    }
-    this._$observer.subscribeProps(this.props, props, func)
-  }
-
-  _subscribeState(state, func) {
-    if (_.isString(state)) {
-      state = [state]
-    }
-    this._$observer.subscribeState(this.state, state, func)
   }
 
   setState(...args) {
@@ -88,6 +89,122 @@ class ObComponent extends React.Component {
     }
     return rst
   }
+
+  watch(targets) {
+    // Object usage multi
+    // {
+    //    'props.xxx': () => {}
+    //    'props.yyy': () => {}
+    // }
+    // or single
+    // {
+    //    subscribe: [],
+    //    handler: () => {}
+    // }
+    if (!_.isArray(targets)) {
+      const keys = _.keys(targets)
+      if (keys.indexOf('handler') !== -1
+        && keys.indexOf('subscribe') !== -1) {
+        targets = [targets]
+      } else {
+        targets = _.map(targets, (handler, subscribe) => {
+          return {
+            subscribe,
+            handler,
+            immediate: true
+          }
+        })
+      }
+    }
+    try {
+      let immediate = false
+      _.forEach(targets, target => {
+        if (!_.isPlainObject(target)) {
+          throw new Error('watch target should be type of Object')
+        }
+        // simple usage
+        // [{'props.xxx': () => {}}]
+        //
+        // full usage
+        // [{'props.xxx': {
+        //    handler: () => {}
+        //    immediate: false // default true
+        // }}]
+        const keys = _.keys(target)
+        if (keys.length === 1
+          && keys[0] !== 'handler'
+          && keys[0] !== 'subscribe'
+          && keys[0] !== 'immediate'
+        ) {
+          const key = keys[0]
+          let rest = target[key]
+          if (_.isFunction(rest)) {
+            rest = {
+              handler: target[key],
+              immediate: true
+            }
+          } else if (!_.isPlainObject(target[key])) {
+            throw new Error('watch target.value type should be one of Function or Object')
+          }
+          target = {
+            subscribe: [key],
+            ...rest
+          }
+        } else if (keys.indexOf('handler') === -1
+          || keys.indexOf('subscribe') === -1) {
+          throw new Error('watch target should has subscribe and handler attr')
+        }
+        // [{
+        //    subscribe: ['props.xxx', 'state.yyy'],
+        //    handler: () => {},
+        //    immediate: false // default true
+        // }]
+        if (_.isString(target.subscribe)) {
+          target.subscribe = [target.subscribe]
+        }
+        if (!_.isArray(target.subscribe)) {
+          throw new Error('watch target.subscribe should be type of Array')
+        }
+        if (!_.isFunction(target.handler)) {
+          throw new Error('watch target.handler should be type of Function')
+        }
+        const { props, state } = transformKeys(target.subscribe)
+        this._subscribe(props, state, target.handler, target.immediate)
+        if (target.immediate !== false) {
+          immediate = true
+        }
+      })
+      if (immediate) {
+        this._$observer.publish(this, this.props, this.state, this.context)
+      }
+    } catch(e) {
+
+    }
+  }
+
+  _subscribe(props, state, func, immediate) {
+    if (arguments.length === 3) {
+      func = state
+      state = []
+    }
+    this._$observer.subscribe(this.props, this.state, props, state, func, immediate)
+  }
+
+  _subscribeProps(props, func, immediate) {
+    if (_.isString(props)) {
+      props = [props]
+    }
+    this._$observer.subscribeProps(this.props, props, func, immediate)
+  }
+
+  _subscribeState(state, func, immediate) {
+    if (_.isString(state)) {
+      state = [state]
+    }
+    this._$observer.subscribeState(this.state, state, func, immediate)
+  }
+
 }
 
-export default ObComponent
+React.ObComponent = ObComponent
+export default React

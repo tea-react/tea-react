@@ -28,7 +28,7 @@ export default class Demo extends EnhanceComponent {
     }
 
     render() {
-        console.log('demo render')
+      console.log('demo render')
         return (
             <div style={page}>
                 <p>=========================================</p>

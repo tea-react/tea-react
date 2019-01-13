@@ -2,7 +2,9 @@ import React, { Component } from 'react';
 import './App.css';
 
 
-import TInput from 'components/input/index.js'
+import Input, {
+  Textarea,
+} from 'components/input/index.js'
 
 class App extends Component {
 
@@ -23,10 +25,26 @@ class App extends Component {
     })
   }
   render() {
+    const prefix = <i className='prefix'/>
+    const suffix = 'suffix'
+    const addonBefore = <button>addonBefore</button>
+    const addonAfter = <button>addonAfter</button>
     return (
       <div className="App">
         <p>
-          <TInput value={this.state.value}
+          <Input value={this.state.value}
+            data-ss='xxxx'
+            style={{border: '1px', color: '#f00'}}
+            className='ssss'
+            addonBefore={addonBefore}
+            addonAfter={addonAfter}
+            prefix={prefix}
+            suffix={suffix}
+            onChange={this.handleChange}/>
+          <button onClick={this.handleClick}>tttt</button>
+        </p>
+        <p>
+          <Textarea value={this.state.value}
             data-ss='xxxx'
             style={{border: '1px', color: '#f00'}}
             className='ssss'

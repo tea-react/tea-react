@@ -1,43 +1,25 @@
-import React from 'react'
 import PropTypes from 'prop-types'
-import classNames from 'classnames';
-import ObservableComponent from 'utils/ObservableComponent.js'
+import classNames from 'classnames'
+import React from 'utils/ObComponent.js'
 import _ from 'lodash'
 
-export default class Input extends ObservableComponent {
+export default class Input extends React.ObComponent {
   static defaultProps = {
-    prefixCls: 'tn-input',
-    type: 'text',
+    prefixCls: 'tea-input',
     disabled: false,
   }
   static propTypes = {
-    type: PropTypes.string,
-    id: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.number,
-    ]),
-    maxLength: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.number,
-    ]),
     disabled: PropTypes.bool,
-    value: PropTypes.any,
-    defaultValue: PropTypes.any,
     className: PropTypes.string,
-    addonBefore: PropTypes.node,
-    addonAfter: PropTypes.node,
     prefixCls: PropTypes.string,
     onPressEnter: PropTypes.func,
     onKeyDown: PropTypes.func,
     onKeyUp: PropTypes.func,
     onFocus: PropTypes.func,
     onBlur: PropTypes.func,
-    prefix: PropTypes.node,
-    suffix: PropTypes.node,
   }
 
   $input = null
-  _className = ''
   state = {
     value: ''
   }
@@ -52,81 +34,9 @@ export default class Input extends ObservableComponent {
     if (this.state.value === null || this.state.value === undefined) {
       this.state.value = ''
     }
-    console.log('input constructor', this.props, this.state)
-    this._subscribe([
-      'className',
-      'style',
-    ], [], (props, states) => {
-      console.log('trigger1', props, states)
-    })
-    this._subscribe([
-      'className',
-      'style',
-      'value'
-    ], [], (props, states) => {
-      console.log('trigger2', props, states)
-    })
-  }
-
-  reInputProps() {
-    this.inputProps = _.omit(this.props, [
-      'value',
-      'defaultValue',
-      'prefixCls',
-      'className',
-      'style',
-      'onPressEnter',
-      'onKeyDown',
-      'onChange',
-      'addonBefore',
-      'addonAfter',
-      'prefix',
-      'suffix',
-    ])
-    this.inputStyle = this.props.style
-    this.inputClassName = this.props.className
-  }
-
-  reInputClassName() {
-    const { prefixCls, disabled } = this.props
-    if (this._prefixCls !== prefixCls
-      || this._disabled !== disabled
-    ) {
-      this._prefixCls = prefixCls
-      this._disabled = disabled
-      this.inputClassName = classNames(prefixCls, {
-        [`${prefixCls}-disabled`]: disabled,
-      })
-    }
-  }
-
-  reInnerInput() {
-      this.inputNode = <input ref={this.setRef}
-        className={this.inputClassName}
-        style={this.inputStyle}
-        value={this.state.value}
-        onChange={this.handleChange}
-        onKeyDown={this.handleKeyDown}
-        {...this.inputProps}
-      />
-  }
-
-  reInputAffix() {
-    const { prefix, suffix, style, prefixCls, className } = this.props
-    if (!_.has(this.props, 'prefix') && !_.has(this.props, 'suffix')) {
-      this.inputStyle = style
-      this.affixStyle = null
-      this.inputClassName = className
-      this.affixClassName = null
-      this.prefixNode = null
-      this.suffixNode = null
-    } else {
-      this.inputStyle = null
-      this.affixStyle = style
-      this.inputClassName = null
-      this.affixClassName = className
-      if (this._prefix !== prefix) {
-        this._prefix = prefix
+    this.watch({
+      'props.prefix': () => {
+        const { prefix, prefixCls } = this.props
         if (prefix !== null && prefix !== undefined) {
           this.prefixNode = (
             <span className={`${prefixCls}-prefix`}>
@@ -136,9 +46,9 @@ export default class Input extends ObservableComponent {
         } else {
           this.prefixNode = null
         }
-      }
-      if (this._suffix !== suffix) {
-        this._suffix = suffix
+      },
+      'props.suffix': () => {
+        const { suffix, prefixCls } = this.props
         if (suffix !== null && suffix !== undefined) {
           this.suffixNode = (
             <span className={`${prefixCls}-suffix`}>
@@ -148,15 +58,47 @@ export default class Input extends ObservableComponent {
         } else {
           this.suffixNode = null
         }
+      },
+      'props.addonBefore': () => {
+        const { addonBefore, prefixCls } = this.props
+        const addonClassName = `${prefixCls}-group-addon`
+        if (addonBefore !== null && addonBefore !== undefined) {
+          this.addonBeforeNode = (
+            <span className={addonClassName}>
+              {addonBefore}
+            </span>
+          )
+        } else {
+          this.addonBeforeNode = null
+        }
+      },
+      'props.addonAfter': () => {
+        const { addonAfter, prefixCls } = this.props
+        const addonClassName = `${prefixCls}-group-addon`
+        if (addonAfter !== null && addonAfter !== undefined) {
+          this.addonAfterNode = (
+            <span className={addonClassName}>
+              {addonAfter}
+            </span>
+          )
+        } else {
+          this.addonAfterNode = null
+        }
+      },
+      'props.type': () => {
+        // reset type
+        this.inputType = this.props.type
+        if (this.inputType === 'button'
+          || this.inputType === 'checkbox'
+          || this.inputType === 'radio'
+          || this.inputType === 'range'
+          || this.inputType === 'submit'
+          || this.inputType === 'reset'
+        ) {
+          this.inputType = 'text'
+        }
       }
-    }
-    if (!_.isEqual(this._inputStyle, this.inputStyle)
-      || this._inputClassName !== this.inputClassName
-    ) {
-      this._inputStyle = this.inputStyle
-      this._inputClassName = this.inputClassName
-      this.reInnerInput()
-    }
+    })
   }
 
   focus() {
@@ -196,24 +138,81 @@ export default class Input extends ObservableComponent {
       onKeyDown(value, e)
     }
   }
-  preRender() {
-    if (!this._stateHasChanged) {
-      this.reInputProps()
-      this.reInputClassName()
-    } else {
-      this.reInnerInput()
-    }
+
+  getInputCls(use) {
+    const { prefixCls, disabled, className } = this.props
+    return classNames(prefixCls, {
+      [`${prefixCls}-disabled`]: disabled,
+      [className]: !!use,
+    })
   }
+
+  getAffixCls(use) {
+    const { prefixCls, className } = this.props
+    return classNames(`${prefixCls}-affix-wrapper`, {
+      [className]: !!use,
+    })
+  }
+
+  withAddon(affixNode) {
+    if (!this.addonBeforeNode && !this.addonAfterNode) {
+      return affixNode
+    }
+    const { prefixCls, className, style } = this.props
+    const groupCls = classNames(
+      `${prefixCls}-group-wrapper`,
+      className,
+    )
+    const addonCls = classNames(
+      `${prefixCls}-group`,
+      `${prefixCls}-addon-wrapper`,
+    )
+    const affixNodeClone = React.cloneElement(affixNode, {
+      style: null,
+      className: this.getAffixCls()
+    })
+    return (
+      <span
+        className={groupCls}
+        style={style}
+      >
+        <span className={addonCls}>
+          {this.addonBeforeNode}
+          {affixNodeClone}
+          {this.addonAfterNode}
+        </span>
+      </span>
+    )
+  }
+
+  withAffix(inputNode) {
+    if (!this.prefixNode && !this.suffixNode) {
+      return inputNode
+    }
+    const affixWrapperCls = this.getAffixCls(true)
+    const inputNodeClone = React.cloneElement(inputNode, {
+      style: null,
+      className: this.getInputCls()
+    })
+    return (
+      <span
+        className={affixWrapperCls}
+        style={this.props.style}
+      >
+        {this.prefixNode}
+        {inputNodeClone}
+        {this.suffixNode}
+      </span>
+    )
+  }
+
   render() {
-    // this._notify()
-    console.log('input render', this.props)
-    const {style, className, value} = this.props
     const inputProps = _.omit(this.props, [
       'value',
       'defaultValue',
+      'type',
       'prefixCls',
       'className',
-      'style',
       'onPressEnter',
       'onKeyDown',
       'onChange',
@@ -222,154 +221,16 @@ export default class Input extends ObservableComponent {
       'prefix',
       'suffix',
     ])
-    const {
-      prefixCls,
-      className,
-      style,
-      addonBefore,
-      addonAfter,
-      prefix,
-      suffix,
-      disabled
-    } = this.props
-    this.inputClassName = classNames(prefixCls, {
-      [`${prefixCls}-disabled`]: disabled,
-    })
-
-    let prefixNode = null
-    if (prefix !== null && prefix !== undefined) {
-      prefixNode = (
-        <span className={`${prefixCls}-prefix`}>
-          {prefix}
-        </span>
-      )
-    }
-    let suffixNode = null
-    if (suffix !== null && suffix !== undefined) {
-      this.suffixNode = (
-        <span className={`${prefixCls}-suffix`}>
-          {suffix}
-        </span>
-      )
-    }
-    const addonClassName = `${prefixCls}-group-addon`;
-    let addonBeforeNode = null
-    if (addonBefore !== null && addonBefore !== undefined) {
-      addonBeforeNode = (
-        <span className={addonClassName}>
-          {addonBefore}
-        </span>
-      )
-    }
-    let addonAfterNode = null
-    if (addonAfter !== null && addonAfter !== undefined) {
-      addonAfterNode = (
-        <span className={addonClassName}>
-          {addonAfter}
-        </span>
-      )
-    }
-    let node = null
-    if (addonBeforeNode || addonAfterNode) {
-      const groupWrapperClassName = classNames(
-        `${prefixCls}-group-wrapper`,
-        className,
-      )
-      const addonClassName = classNames(
-        `${prefixCls}-wrapper`,
-        `${prefixCls}-group`,
-      )
-      const inputClassName = ''
-      const inputStyle = null
-      if (suffixNode || prefixNode) {
-        const affixWrapperCls = classNames(
-          `${prefixCls}-affix-wrapper`,
-        )
-        node = (
-          <span
-            className={groupWrapperClassName}
-            style={style}
-          >
-            <span className={addonClassName}>
-              {addonBeforeNode}
-              <span
-                className={affixWrapperCls}
-              >
-                {prefix}
-                <input ref={this.setRef}
-                  className={inputClassName}
-                  style={inputStyle}
-                  value={this.state.value}
-                  onChange={this.handleChange}
-                  onKeyDown={this.handleKeyDown}
-                  {...inputProps}
-                />
-                {suffix}
-              </span>
-              {addonAfterNode}
-            </span>
-          </span>
-        )
-      } else {
-        node = (
-          <span
-            className={groupWrapperClassName}
-            style={style}
-          >
-            <span className={addonClassName}>
-              {addonBeforeNode}
-              <input ref={this.setRef}
-                className={inputClassName}
-                style={inputStyle}
-                value={this.state.value}
-                onChange={this.handleChange}
-                onKeyDown={this.handleKeyDown}
-                {...inputProps}
-              />
-              {addonAfterNode}
-            </span>
-          </span>
-        )
-      }
-    } else {
-      if (suffixNode || prefixNode) {
-        const affixWrapperCls = classNames(
-          `${prefixCls}-affix-wrapper`,
-          className,
-        )
-        const inputClassName = ''
-        const inputStyle= null
-        node =(
-          <span
-            className={affixWrapperCls}
-          >
-            {prefix}
-            <input ref={this.setRef}
-              className={inputClassName}
-              style={inputStyle}
-              value={this.state.value}
-              onChange={this.handleChange}
-              onKeyDown={this.handleKeyDown}
-              {...inputProps}
-            />
-            {suffix}
-          </span>
-        )
-      } else {
-        const inputClassName = ''
-        const inputStyle= null
-        node = (
-          <input ref={this.setRef}
-            className={inputClassName}
-            style={inputStyle}
-            value={this.state.value}
-            onChange={this.handleChange}
-            onKeyDown={this.handleKeyDown}
-            {...inputProps}
-          />
-        )
-      }
-    }
-    return node
+    const inputClassName = this.getInputCls(true)
+    return this.withAddon(this.withAffix(
+      <input ref={this.setRef}
+        className={inputClassName}
+        type={this.inputType}
+        value={this.state.value}
+        onChange={this.handleChange}
+        onKeyDown={this.handleKeyDown}
+        {...inputProps}
+      />
+    ))
   }
 }

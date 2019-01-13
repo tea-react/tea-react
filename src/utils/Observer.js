@@ -15,10 +15,10 @@ class Observer {
     this.uid = 0
     this.watcherMap = new Map()
     this._props = {}
-    this._states = {}
+    this._state = {}
   }
 
-  defineReactive(obj, key, val, notify) {
+  defineReactive(obj, key, val, notify, immediate = true) {
     if (!_.isFunction(notify)) {
       throw new Error('observer.depend call is required before defineProperty')
     }
@@ -30,9 +30,9 @@ class Observer {
     // cater for pre-defined getter/setters
     const getter = property && property.get
     const setter = property && property.set
-    if ((!getter || setter) && arguments.length === 2) {
-      val = obj[key]
-    }
+    // if ((!getter || setter) && arguments.length === 2) {
+    //   val = obj[key]
+    // }
 
     Object.defineProperty(obj, key, {
       enumerable: true,
@@ -58,6 +58,9 @@ class Observer {
         notify()
       }
     })
+    if (immediate) {
+      notify()
+    }
   }
 
   depend(func) {
@@ -76,24 +79,24 @@ class Observer {
     this.notify = null
   }
 
-  subscribe(props, state, propKeys, stateKeys, func) {
+  subscribe(props, state, propKeys, stateKeys, func, immediate) {
     this.depend(func)
-    this.subscribeProps(props, propKeys, func)
-    this.subscribeState(state, stateKeys, func)
+    this.subscribeProps(props, propKeys, func, immediate)
+    this.subscribeState(state, stateKeys, func, immediate)
   }
 
-  subscribeProps(props, propKeys, func) {
+  subscribeProps(props, propKeys, func, immediate) {
     this.depend(func)
     _.forEach(propKeys, key => {
-      this.defineReactive(this._props, key, props[key], this.notify)
+      this.defineReactive(this._props, key, props[key], this.notify, immediate)
     })
     this.unDepend()
   }
 
-  subscribeState(state, stateKeys, func) {
+  subscribeState(state, stateKeys, func, immediate) {
     this.depend(func)
     _.forEach(stateKeys, key => {
-      this.defineReactive(this._state, key, state[key], this.notify)
+      this.defineReactive(this._state, key, state[key], this.notify, immediate)
     })
     this.unDepend()
   }
@@ -102,6 +105,7 @@ class Observer {
     _.forEach([...this.watcherMap.values()], func => {
       func.call(...args)
     })
+    this.watcherMap.clear()
   }
 
   clearNotifies() {
