@@ -5,6 +5,13 @@ import './App.css';
 import Input, {
   Textarea,
 } from 'components/input/index.js'
+import {
+  FormItem
+} from 'components/form/index.js'
+
+const block = {
+  borderBottom: '1px solid'
+}
 
 class App extends Component {
 
@@ -12,9 +19,9 @@ class App extends Component {
     value: 2
   }
 
-  handleChange = e => {
-    this.state.value = e
-    // console.log('Demo handleChange', this.state.value, e)
+  handleChange = (value, ...args) => {
+    // this.state.value = value
+    console.log('Demo handleChange', this.state.value, ...args)
   }
 
   handleClick = () => {
@@ -31,7 +38,7 @@ class App extends Component {
     const addonAfter = <button>addonAfter</button>
     return (
       <div className="App">
-        <p>
+        <p style={block}>
           <Input value={this.state.value}
             data-ss='xxxx'
             style={{border: '1px', color: '#f00'}}
@@ -43,7 +50,36 @@ class App extends Component {
             onChange={this.handleChange}/>
           <button onClick={this.handleClick}>tttt</button>
         </p>
-        <p>
+        <p style={block}>
+          <FormItem>
+            <span>
+              <Input value={this.state.value}
+                data-ss='xxxx'
+                style={{border: '1px', color: '#f00'}}
+                className='ssss'
+                addonBefore={addonBefore}
+                addonAfter={addonAfter}
+                prefix={prefix}
+                suffix={suffix}
+                onChange={this.handleChange}/>
+              <span></span>
+              <span>
+                <Input value={this.state.value}
+                  data-ss='xxxx'
+                  style={{border: '1px', color: '#f00'}}
+                  className='ssss'
+                  addonBefore={addonBefore}
+                  addonAfter={addonAfter}
+                  prefix={prefix}
+                  suffix={suffix}
+                  onChange={this.handleChange}/>
+                <span><span></span></span>
+              </span>
+            </span>
+            <button onClick={this.handleClick}>tttt</button>
+          </FormItem>
+        </p>
+        <p style={block}>
           <Textarea value={this.state.value}
             data-ss='xxxx'
             style={{border: '1px', color: '#f00'}}

@@ -19,6 +19,8 @@ export default class Input extends React.ObComponent {
     onBlur: PropTypes.func,
   }
 
+  static _$type = 'FormItem'
+
   $input = null
   state = {
     value: ''
@@ -114,6 +116,7 @@ export default class Input extends React.ObComponent {
   }
 
   setRef = node => {
+    console.log('input setRef', node)
     this.$input = node
   }
 
@@ -207,6 +210,7 @@ export default class Input extends React.ObComponent {
   }
 
   render() {
+    console.log('input render')
     const inputProps = _.omit(this.props, [
       'value',
       'defaultValue',
@@ -220,7 +224,9 @@ export default class Input extends React.ObComponent {
       'addonAfter',
       'prefix',
       'suffix',
+      'isFormItem',
     ])
+    console.log(inputProps)
     const inputClassName = this.getInputCls(true)
     return this.withAddon(this.withAffix(
       <input ref={this.setRef}
