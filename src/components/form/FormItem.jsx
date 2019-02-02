@@ -1,25 +1,44 @@
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
+import _ from 'lodash'
 import React from 'utils/ObComponent.js'
 import debug from 'utils/debug.js'
-import _ from 'lodash'
+import { _$type, 
+  TEA_FORM, 
+  TEA_FORM_ITEM, 
+  TEA_FORM_ITEM_CHILD, 
+} from 'utils/symbol'
+
 
 const log = debug('FormItem Component')
 
 export default class FormItem extends React.ObComponent {
   static defaultProps = {
     prefixCls: 'tea-formItem',
+    rules: [],
+    triggerEventName: 'onChange',
+    validateEnable: true,
+    validateWhenChange: true,
+    validateWhenBlur: false,
+    showLabel: true,
+    label: '',
   }
   static propTypes = {
-    disabled: PropTypes.bool,
-    className: PropTypes.string,
-    prefixCls: PropTypes.string,
-    onPressEnter: PropTypes.func,
-    onKeyDown: PropTypes.func,
-    onKeyUp: PropTypes.func,
-    onFocus: PropTypes.func,
-    onBlur: PropTypes.func,
+    form: PropTypes.object,
+    label: PropTypes.node,
+    showLabel: PropTypes.bool,
+    rules: PropTypes.oneOfType([
+      PropTypes.array,
+      PropTypes.func,
+    ]),
+    extendRules: PropTypes.array,
+    triggerEventName: PropTypes.string,
+    validateWhenChange: PropTypes.bool,
+    validateWhenBlur: PropTypes.bool,
+    validateEnable: PropTypes.bool,
   }
+
+  static [_$type] = [TEA_FORM_ITEM]
 
   $formItem = null
   formItemCount = 0
@@ -31,11 +50,17 @@ export default class FormItem extends React.ObComponent {
 
   constructor(props) {
     super(props)
-    this.children = this.injectChildren(this.props.children)
-    console.log('FormItem constructor')
     this.watch({
+      'props.form': () => {
+        if (_.isObject(this.props.form)
+          && this.props.form[_$type] === [TEA_FORM]
+        ) {
+          this.form = this.props.form
+        } else {
+          this.form = null
+        }
+      }
     })
-    this.a = 'aaaaaaaaaaaaaaaa'
   }
 
   injectChildren(children) {
@@ -63,7 +88,7 @@ export default class FormItem extends React.ObComponent {
     const originalClass = child.type
     const originalProps = child.props || {}
     if (_.isFunction(originalClass)
-      && originalClass._$type === 'FormItem'
+      && originalClass[_$type] === [TEA_FORM_ITEM_CHILD]
       && originalProps.isFormItem !== false
     ) {
       // 对于FormItem做计数，超过一个则报错
@@ -80,9 +105,9 @@ export default class FormItem extends React.ObComponent {
         )
       }
       this.formItemCount += 1
-      this.originalOnChange = originalProps.onChange
+      this.originalTriggerEvent = originalProps[this.props.triggerEventName]
       child = this.cloneElement(child, {
-        onChange: this.handleChange
+        [this.props.triggerEventName]: this.collectValue
       })
     } else if (_.isObject(originalProps.children) 
       && this.formItemCount < 1
@@ -160,11 +185,15 @@ export default class FormItem extends React.ObComponent {
     }).join('\n')
   }
 
-  handleChange = (...args) => {
-    console.log(this.a, args)
-    if (_.isFunction(this.originalOnChange)) {
-      this.originalOnChange(...args)
+  collectValue = (value, ...args) => {
+    this.value = value
+    if (_.isFunction(this.originalTriggerEvent)) {
+      this.originalTriggerEvent(value, ...args)
     }
+  }
+
+  validate = () => {
+  
   }
 
   setRef = node => {
@@ -172,6 +201,7 @@ export default class FormItem extends React.ObComponent {
   }
 
   render() {
+    this.children = this.injectChildren(this.props.children)
     console.log('FormItem render', this.props.children, this.children)
     const itemProps = _.omit(this.props, [
     ])

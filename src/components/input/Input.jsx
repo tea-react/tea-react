@@ -1,7 +1,11 @@
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
-import React from 'utils/ObComponent.js'
 import _ from 'lodash'
+import React from 'utils/ObComponent.js'
+import { 
+  _$type,
+  TEA_FORM_ITEM_CHILD, 
+} from 'utils/symbol'
 
 export default class Input extends React.ObComponent {
   static defaultProps = {
@@ -19,7 +23,7 @@ export default class Input extends React.ObComponent {
     onBlur: PropTypes.func,
   }
 
-  static _$type = 'FormItem'
+  static [_$type] = [TEA_FORM_ITEM_CHILD]
 
   $input = null
   state = {
