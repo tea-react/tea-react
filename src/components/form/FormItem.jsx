@@ -3,14 +3,34 @@ import classNames from 'classnames'
 import _ from 'lodash'
 import React from 'utils/ObComponent.js'
 import debug from 'utils/debug.js'
-import { _$type, 
-  TEA_FORM, 
-  TEA_FORM_ITEM, 
-  TEA_FORM_ITEM_CHILD, 
+import {
+  _$type,
+  TEA_FORM,
+  TEA_FORM_ITEM,
+  TEA_FORM_ITEM_CHILD,
 } from 'utils/symbol'
 
-
 const log = debug('FormItem Component')
+
+function checkChange(newVal, oldVal) {
+  if (_.isArray(newVal) && _.isArray(oldVal)) {
+    const newLen = newVal.length
+    const oldLen = oldVal.length
+    if (newLen !== oldLen) {
+      return false
+    }
+    let rst = true
+    _.forEach(newVal, (value, index) => {
+      rst = (oldVal[index] === value) && rst
+      return rst
+    })
+    return rst
+  }
+  if (_.isObject(newVal) && _.isObject(oldVal)) {
+
+  }
+  return newVal === oldVal
+}
 
 export default class FormItem extends React.ObComponent {
   static defaultProps = {
@@ -22,9 +42,11 @@ export default class FormItem extends React.ObComponent {
     validateWhenBlur: false,
     showLabel: true,
     label: '',
+    defaultMessage: '校验失败',
   }
   static propTypes = {
     form: PropTypes.object,
+    name: PropTypes.string,
     label: PropTypes.node,
     showLabel: PropTypes.bool,
     rules: PropTypes.oneOfType([
@@ -36,6 +58,7 @@ export default class FormItem extends React.ObComponent {
     validateWhenChange: PropTypes.bool,
     validateWhenBlur: PropTypes.bool,
     validateEnable: PropTypes.bool,
+    defaultMessage: PropTypes.string,
   }
 
   static [_$type] = [TEA_FORM_ITEM]
@@ -109,7 +132,7 @@ export default class FormItem extends React.ObComponent {
       child = this.cloneElement(child, {
         [this.props.triggerEventName]: this.collectValue
       })
-    } else if (_.isObject(originalProps.children) 
+    } else if (_.isObject(originalProps.children)
       && this.formItemCount < 1
     ) { // 对子节点做递归查找，一旦找到FormItem则停止递归
       // React对element和element.props都做了Object.freeze
@@ -179,7 +202,7 @@ export default class FormItem extends React.ObComponent {
       const pre = line.close ? '</' : '<'
       const className = line.className ? ` className='${line.className}'` : ''
       const isFormItem = line.isFormItem || ''
-      return ' ' 
+      return ' '
         + Array(line.level).join('  ')
         + `${pre}${line.tagName}${isFormItem}${className}>`
     }).join('\n')
@@ -192,11 +215,63 @@ export default class FormItem extends React.ObComponent {
     }
   }
 
-  validate = () => {
-  
+  validate() {
+    const value = this.state.value
+    const hasChange = checkChange(value, this.oldValue)
+    const defaultResult = {
+      valid: false,
+      message: this.props.defaultMessage,
+      value,
+      hasChange,
+    }
+    if (_.isFunction(this.props.rules)) {
+      return new Promise(resolve => {
+        const rst = this.props.rules(value, rst => {
+          if (_.has(rst, 'valid') && _.has(rst, 'message')) {
+            resolve({
+              ...rst,
+              value,
+              hasChange,
+            })
+          } else {
+            resolve(defaultResult)
+          }
+        })
+        if ((_.isFunction(rst) && _.has(rst, 'then'))
+          || (_.isObject(rst) && _.has(rst, 'valid') && _.has(rst, 'message'))
+        ) {
+          resolve({
+            ...rst,
+            value,
+            hasChange,
+          })
+        } else if (rst !== undefined) {
+          resolve(defaultResult)
+        }
+      })
+    } else {
+
+    }
+    return {
+      value: this.state.value,
+      hasChange: this.hasChange,
+      message: this.message
+    }
   }
 
-  setRef = node => {
+  reset() {
+
+  }
+
+  getValue() {
+
+  }
+
+  memorize() {
+
+  }
+
+  setRef(node) {
     this.$formItem = node
   }
 

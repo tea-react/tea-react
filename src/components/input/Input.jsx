@@ -2,9 +2,9 @@ import PropTypes from 'prop-types'
 import classNames from 'classnames'
 import _ from 'lodash'
 import React from 'utils/ObComponent.js'
-import { 
+import {
   _$type,
-  TEA_FORM_ITEM_CHILD, 
+  TEA_FORM_ITEM_CHILD,
 } from 'utils/symbol'
 
 export default class Input extends React.ObComponent {
@@ -230,7 +230,6 @@ export default class Input extends React.ObComponent {
       'suffix',
       'isFormItem',
     ])
-    console.log(inputProps)
     const inputClassName = this.getInputCls(true)
     return this.withAddon(this.withAffix(
       <input ref={this.setRef}

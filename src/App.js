@@ -8,6 +8,7 @@ import Input, {
 import {
   FormItem
 } from 'components/form/index.js'
+import FormItemTest from './FormItemTest'
 
 const block = {
   borderBottom: '1px solid'
@@ -35,7 +36,7 @@ class App extends Component {
     const prefix = <i className='prefix'/>
     const suffix = 'suffix'
     const addonBefore = <button>addonBefore</button>
-    const addonAfter = <button>addonAfter</button>
+    const addonAfter = this.state.value > 0.5 ? <button>addonAfter</button> : ''
     return (
       <div className="App">
         <p style={block}>
@@ -87,6 +88,10 @@ class App extends Component {
             onChange={this.handleChange}/>
           <button onClick={this.handleClick}>tttt</button>
         </p>
+        <div>===========</div>
+        <FormItem>
+          <FormItemTest />
+        </FormItem>
       </div>
     );
   }
