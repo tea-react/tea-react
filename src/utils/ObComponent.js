@@ -91,16 +91,28 @@ class ObComponent extends React.Component {
   }
 
   watch(targets) {
-    // Object usage multi
-    // {
-    //    'props.xxx': () => {}
-    //    'props.yyy': () => {}
-    // }
-    // or single
-    // {
-    //    subscribe: [],
-    //    handler: () => {}
-    // }
+    /**
+     * Object single usage
+     * {
+     *    subscribe: [],
+     *    handler: () => {}
+     * }
+     * Object multi usage
+     * {
+     *    'props.xxx': () => {}
+     *    'props.yyy': () => {}
+     * }
+     * Array usage
+     * [{
+     *    subscribe: [],
+     *    handler: () => {}
+     * }]
+     * or
+     * [{
+     *    'props.xxx': () => {}
+     * }]
+     *
+     **/
     if (!_.isArray(targets)) {
       const keys = _.keys(targets)
       if (keys.indexOf('handler') !== -1
@@ -122,10 +134,10 @@ class ObComponent extends React.Component {
         if (!_.isPlainObject(target)) {
           throw new Error('watch target should be type of Object')
         }
-        // simple usage
+        // single subscribe simple usage
         // [{'props.xxx': () => {}}]
         //
-        // full usage
+        // single subscribe full usage
         // [{'props.xxx': {
         //    handler: () => {}
         //    immediate: false // default true
@@ -154,6 +166,7 @@ class ObComponent extends React.Component {
           || keys.indexOf('subscribe') === -1) {
           throw new Error('watch target should has subscribe and handler attr')
         }
+        // multi subscribe usage
         // [{
         //    subscribe: ['props.xxx', 'state.yyy'],
         //    handler: () => {},

@@ -43,6 +43,8 @@ export default class FormItem extends React.ObComponent {
     showLabel: true,
     label: '',
     defaultMessage: '校验失败',
+    required: false,
+    requiredMessage: '必填',
   }
   static propTypes = {
     form: PropTypes.object,
@@ -59,6 +61,8 @@ export default class FormItem extends React.ObComponent {
     validateWhenBlur: PropTypes.bool,
     validateEnable: PropTypes.bool,
     defaultMessage: PropTypes.string,
+    required: PropTypes.bool,
+    requiredMessage: PropTypes.string,
   }
 
   static [_$type] = [TEA_FORM_ITEM]
@@ -68,12 +72,12 @@ export default class FormItem extends React.ObComponent {
   elementStack = []
   elementStackLevel = 0
   state = {
-    value: ''
+    value: '',
   }
 
   constructor(props) {
     super(props)
-    this.watch({
+    this.watch([{
       'props.form': () => {
         if (_.isObject(this.props.form)
           && this.props.form[_$type] === [TEA_FORM]
@@ -82,8 +86,32 @@ export default class FormItem extends React.ObComponent {
         } else {
           this.form = null
         }
-      }
-    })
+      },
+    }, {
+      // 计算是否required
+      subscribe: ['props.rules', 'props.required'],
+      handler: () => {
+        if (this.props.required === true) {
+          this.required = true
+        } else {
+          if (_.isString(this.props.rules)) {
+            this.required = this.props.rules === 'required'
+          } else if (_.isArray(this.props.rules)) {
+            _.forEach(this.props.rules, item => {
+              this.required = item === 'required'
+              return !this.required
+            })
+          } else if (_.isObject(this.props.rules)) {
+            _.forEach(this.props.rules, (value, key) => {
+              this.required = value === 'required' || key === 'required'
+              return !this.required
+            })
+          } else {
+            this.required = false
+          }
+        }
+      },
+    }])
   }
 
   injectChildren(children) {
@@ -215,7 +243,7 @@ export default class FormItem extends React.ObComponent {
     }
   }
 
-  validate() {
+  validate(validator) {
     const value = this.state.value
     const hasChange = checkChange(value, this.oldValue)
     const defaultResult = {
@@ -224,38 +252,29 @@ export default class FormItem extends React.ObComponent {
       value,
       hasChange,
     }
+    let rst = {}
     if (_.isFunction(this.props.rules)) {
-      return new Promise(resolve => {
-        const rst = this.props.rules(value, rst => {
-          if (_.has(rst, 'valid') && _.has(rst, 'message')) {
-            resolve({
-              ...rst,
-              value,
-              hasChange,
-            })
-          } else {
-            resolve(defaultResult)
-          }
-        })
-        if ((_.isFunction(rst) && _.has(rst, 'then'))
-          || (_.isObject(rst) && _.has(rst, 'valid') && _.has(rst, 'message'))
-        ) {
-          resolve({
-            ...rst,
+      rst = this.props.rules(value)
+    } else if (_.isFunction(validator)) {
+      rst = validator(value, this.props.rules)
+    }
+    if (!_.isObject(rst)) {
+      // error
+    } else {
+      if (!_.isFunction(rst.then)) {
+        rst = Promise.resolve(rst)
+      }
+      return rst.then(data => {
+        if (_.has(data, 'valid') && _.has(data, 'message')) {
+          return {
+            ...data,
             value,
-            hasChange,
-          })
-        } else if (rst !== undefined) {
-          resolve(defaultResult)
+            hasChange
+          }
+        } else {
+          return defaultResult
         }
       })
-    } else {
-
-    }
-    return {
-      value: this.state.value,
-      hasChange: this.hasChange,
-      message: this.message
     }
   }
 
