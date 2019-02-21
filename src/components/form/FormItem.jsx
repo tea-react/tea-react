@@ -26,6 +26,7 @@ function checkChange(newVal, oldVal) {
     })
     return rst
   }
+  // TODO:
   if (_.isObject(newVal) && _.isObject(oldVal)) {
 
   }
@@ -71,20 +72,39 @@ export default class FormItem extends React.ObComponent {
   formItemCount = 0
   elementStack = []
   elementStackLevel = 0
-  state = {
-    value: '',
-  }
 
   constructor(props) {
     super(props)
+    this.formCalls = {
+      validate: this.validate,
+      reset: this.reset,
+      memorize: this.memorize,
+      getValue: this.getValue,
+    }
     this.watch([{
-      'props.form': () => {
+      'props.form': ({ prevProps }) => {
         if (_.isObject(this.props.form)
           && this.props.form[_$type] === [TEA_FORM]
         ) {
           this.form = this.props.form
+          this.form.pushItem(this.props.name, this.formCalls)
         } else {
+          const prevForm = prevProps && prevProps.prevForm
+          if (prevForm && _.isFunction(prevForm.popItem)) {
+            prevForm.pop(this.props.name, this.formCalls)
+          }
           this.form = null
+        }
+      },
+    }, {
+      'props.name': ({ prevProps }) => {
+        // name发生变化但实例未销毁，需要重新注册validate
+        if (_.isObject(this.props.form)
+          && this.props.form[_$type] === [TEA_FORM]
+        ) {
+          const prevName = prevProps.name
+          this.props.form.popItem(prevName, this.formCalls)
+          this.props.form.pushItem(this.props.name, this.formCalls)
         }
       },
     }, {
@@ -244,22 +264,27 @@ export default class FormItem extends React.ObComponent {
   }
 
   validate(validator) {
-    const value = this.state.value
+    const value = this.value
     const hasChange = checkChange(value, this.oldValue)
     const defaultResult = {
+      name: this.props.name,
       valid: false,
       message: this.props.defaultMessage,
       value,
       hasChange,
     }
     let rst = {}
+    let validType
     if (_.isFunction(this.props.rules)) {
       rst = this.props.rules(value)
+      validType = 'props.rules'
     } else if (_.isFunction(validator)) {
       rst = validator(value, this.props.rules)
+      validType = 'registered Validator'
     }
     if (!_.isObject(rst)) {
-      // error
+      log.warn(`${validType} function should return an Object data`)
+      return Promise.resolve(defaultResult)
     } else {
       if (!_.isFunction(rst.then)) {
         rst = Promise.resolve(rst)
@@ -269,7 +294,8 @@ export default class FormItem extends React.ObComponent {
           return {
             ...data,
             value,
-            hasChange
+            hasChange,
+            name: this.props.name,
           }
         } else {
           return defaultResult
@@ -283,11 +309,11 @@ export default class FormItem extends React.ObComponent {
   }
 
   getValue() {
-
+    return this.value
   }
 
   memorize() {
-
+    this.oldValue = this.value
   }
 
   setRef(node) {
@@ -304,5 +330,11 @@ export default class FormItem extends React.ObComponent {
         {this.children}
       </span>
     )
+  }
+
+  componentWillUnmount() {
+    if (this.form !== null) {
+      this.form.popItem(this.props.name, this.formCalls)
+    }
   }
 }

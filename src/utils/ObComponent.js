@@ -85,7 +85,7 @@ class ObComponent extends React.Component {
       this.props = nextProps
       this.state = nextState
       this.context = nextContext
-      this._$observer.publish(this, prevProps, prevState, prevContext)
+      this._$observer.publish(this, { prevProps, prevState, prevContext })
     }
     return rst
   }

@@ -103,7 +103,7 @@ class Observer {
 
   publish(...args) {
     _.forEach([...this.watcherMap.values()], func => {
-      func.call(...args)
+      func.apply(args)
     })
     this.watcherMap.clear()
   }
